@@ -4,12 +4,10 @@ import requests
 from flask import Flask, request
 
 # --- ВАШИ НАСТРОЙКИ (Переменные заполнены) ---
+# Секретный ключ удален, так как он не может быть отправлен из TradingView.
 TELEGRAM_BOT_TOKEN = "5272385865:AAHk8dBbrWg2nER7TAMF76fIBaoLfEWNqpU" 
 TELEGRAM_CHAT_ID = "-1002897807657" 
-# 1. Проверка Секретного Ключа (Security Check)
-    received_secret = request.headers.get('Authorization')
-    if received_secret != f"Bearer {WEBHOOK_SECRET}":
-        return {"status": "error", "message": "Invalid secret"}, 403
+# ---------------------------------------------
 
 app = Flask(__name__)
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -28,28 +26,24 @@ def send_telegram_message(text):
 
 @app.route('/webhook/tradingview', methods=['POST'])
 def tradingview_webhook():
-# 1. Проверка Секретного Ключа (Security Check)
-    received_secret = request.headers.get('Authorization')
-    if received_secret != f"Bearer {WEBHOOK_SECRET}":
-        return {"status": "error", "message": "Invalid secret"}, 403
-# TELEGRAM_CHAT_ID = "-1002897807657"  <-- Ваше значение
-# WEBHOOK_SECRET = "SmartMoney2025Secret"  <-- ЭТУ СТРОКУ НУЖНО УДАЛИТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ
-# ---------------------
-        return {"status": "error", "message": "Invalid secret"}, 403
-
+    """Обрабатывает входящие Webhook-запросы от TradingView.
+    Проверка ключа отключена для обхода ограничения интерфейса TV.
+    """
+    
     try:
         data = request.get_json(force=True)
     except Exception as e:
+        # Если не удалось получить JSON, возвращаем ошибку
         return {"status": "error", "message": "Invalid JSON"}, 400
 
-    # 2. Извлечение данных из JSON
+    # 1. Извлечение данных из JSON (ожидаем {{strategy.alert_message}})
     action = data.get("action")
     symbol = data.get("symbol")
     price = data.get("price")
     timeframe = data.get("timeframe")
     strategy = data.get("strategy")
     
-    # 3. Форматирование сообщения для Telegram
+    # 2. Форматирование сообщения для Telegram
     if action and symbol and price:
         emoji = "🟢 BUY" if action == "BUY" else "🔴 SELL"
         color = "BUY" if action == "BUY" else "SELL"
@@ -63,6 +57,7 @@ def tradingview_webhook():
         send_telegram_message(message_text)
         return {"status": "success", "message": "Signal processed and sent"}, 200
     
+    # Если данные неполные
     return {"status": "error", "message": "Missing data in payload"}, 400
 
 if __name__ == '__main__':
