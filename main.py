@@ -6,8 +6,10 @@ from flask import Flask, request
 # --- ВАШИ НАСТРОЙКИ (Переменные заполнены) ---
 TELEGRAM_BOT_TOKEN = "5272385865:AAHk8dBbrWg2nER7TAMF76fIBaoLfEWNqpU" 
 TELEGRAM_CHAT_ID = "-1002897807657" 
-WEBHOOK_SECRET = "SmartMoney2025Secret"
-# ---------------------
+# 1. Проверка Секретного Ключа (Security Check)
+    received_secret = request.headers.get('Authorization')
+    if received_secret != f"Bearer {WEBHOOK_SECRET}":
+        return {"status": "error", "message": "Invalid secret"}, 403
 
 app = Flask(__name__)
 TELEGRAM_API_URL = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
@@ -26,11 +28,13 @@ def send_telegram_message(text):
 
 @app.route('/webhook/tradingview', methods=['POST'])
 def tradingview_webhook():
-    """Обрабатывает входящие Webhook-запросы от TradingView."""
-    
-    # 1. Проверка Секретного Ключа (Security Check)
+# 1. Проверка Секретного Ключа (Security Check)
     received_secret = request.headers.get('Authorization')
     if received_secret != f"Bearer {WEBHOOK_SECRET}":
+        return {"status": "error", "message": "Invalid secret"}, 403
+# TELEGRAM_CHAT_ID = "-1002897807657"  <-- Ваше значение
+# WEBHOOK_SECRET = "SmartMoney2025Secret"  <-- ЭТУ СТРОКУ НУЖНО УДАЛИТЬ ИЛИ ЗАКОММЕНТИРОВАТЬ
+# ---------------------
         return {"status": "error", "message": "Invalid secret"}, 403
 
     try:
